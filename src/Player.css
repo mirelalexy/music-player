@@ -1,0 +1,141 @@
+.player-container{
+    display: flex;
+    flex-direction: column;
+}
+
+.metadata{
+    display: flex;
+    width: 165px;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    align-self: center;
+}
+
+.playing-from{
+    color: #fff;
+    font-family: Inter;
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.album-name{
+    color: #fff;
+    text-align: center;
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.cover{
+    width: 330px;
+    height: 330px;
+    border-radius: 5px;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+.song-title{
+    color: #fff;
+    font-family: Inter;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.artist-name{
+    color: #c1c0cd;
+    font-family: Inter;
+    font-size: 17px;
+    font-weight: 500;
+}
+
+.progress-bar{
+    border-radius: 5px;
+    cursor: pointer;
+    width: 330px;
+    height: 4px;
+    background-color: #4c086487;
+}
+
+.progress-bar-container{
+    background: #373641;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 4px;
+    width: 100%;
+}
+
+.progress-line{
+    background: #fff;
+    border-radius: 5px;
+    height: 4px;
+    width: 50%;
+    transform: width 0.1s linear;
+}
+
+.progress-circle{
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background-color: #fff;
+    position: relative;
+    bottom: 3px;
+    right: 2px;
+}
+
+#current-time{
+    color: #c1c0cd;
+    font-family: Inter;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#duration{
+    color: #c1c0cd;
+    font-family: Inter;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.song-artist{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+}
+
+.song-info{
+    display: flex;
+    width: 139px;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.duration-wrapper{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+.progress{
+    display: flex;
+    flex-direction: row;
+}
+
+.controls{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    margin-top: 45px;
+}
+
+.icon:hover{
+    filter: brightness(0.8);
+    cursor: pointer;
+}
