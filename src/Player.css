@@ -1,3 +1,16 @@
+.main-container{
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+    background-color: #870DB3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    position: relative;
+}
+
+
 .player-container{
     display: flex;
     flex-direction: column;
@@ -13,7 +26,7 @@
 }
 
 .playing-from{
-    color: #fff;
+    color: #FFF;
     font-family: Inter;
     font-size: 14px;
     font-weight: 400;
@@ -22,7 +35,7 @@
 }
 
 .album-name{
-    color: #fff;
+    color: #FFF;
     text-align: center;
     font-family: Inter;
     font-size: 16px;
@@ -39,7 +52,7 @@
 }
 
 .song-title{
-    color: #fff;
+    color: #FFF;
     font-family: Inter;
     font-size: 22px;
     font-weight: 700;
@@ -47,7 +60,7 @@
 }
 
 .artist-name{
-    color: #c1c0cd;
+    color: #C1C0CD;
     font-family: Inter;
     font-size: 17px;
     font-weight: 500;
@@ -58,7 +71,7 @@
     cursor: pointer;
     width: 330px;
     height: 4px;
-    background-color: #4c086487;
+    background-color: #4C086487;
 }
 
 .progress-bar-container{
@@ -70,7 +83,7 @@
 }
 
 .progress-line{
-    background: #fff;
+    background: #FFF;
     border-radius: 5px;
     height: 4px;
     width: 50%;
@@ -88,14 +101,14 @@
 }
 
 #current-time{
-    color: #c1c0cd;
+    color: #C1C0CD;
     font-family: Inter;
     font-size: 13px;
     font-weight: 500;
 }
 
 #duration{
-    color: #c1c0cd;
+    color: #C1C0CD;
     font-family: Inter;
     font-size: 13px;
     font-weight: 500;
@@ -138,4 +151,64 @@
 .icon:hover{
     filter: brightness(0.8);
     cursor: pointer;
+}
+
+.hidden{
+    display: none;
+}
+
+/* lyrics */
+.lyrics-container{
+    width: 702px;
+    height: 529px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #AF17E3;
+    box-shadow: 0px 4px 40px 0px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: absolute;
+    right: 10vw;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+}
+
+.lyrics{
+    padding: 20 20 0 20;
+    width: 643px;
+    height: 499px;
+    flex-shrink: 0;
+}
+
+.lyrics>p{
+    color: #302238;
+    font-family: Inter;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 30px;
+}
+
+p.highlighted{
+    color: #fff;
+}
+
+/* animations and toggling lyrics */
+.player-container.centered {
+    transition: transform 0.5s ease;
+    transform: translateX(0);
+}
+  
+.player-container.shifted-left {
+    transition: transform 0.5s ease;
+    transform: translateX(-28vw);
 }
