@@ -25,7 +25,7 @@ function Player(){
                         <p className="playing-from">Playing from album</p>
                         <p className="album-name">DIE FOR ME</p>
                     </div>
-                    <img className="cover" src="src/assets/die-for-me-cover.png" alt="album cover"></img>
+                    <img className="cover" src="src/assets/images/die-for-me.png" alt="album cover"></img>
                     <div className="song-info">
                         <p className="song-title">DIE FOR ME</p>
                         <div className="song-artist">
