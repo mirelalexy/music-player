@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import {Pool} from 'pg';
+import pkg from 'pg';
 import dotenv from 'dotenv';
 
+const { Pool } = pkg;
 dotenv.config(); // load environment variables
 const app = express();
 app.use(cors()); // enable CORS for cross-origin requests
