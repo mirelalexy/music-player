@@ -105,6 +105,7 @@ function Player(){
                     <div className="song-info">
                         <p className="song-title">{song.song_name}</p>
                         <div className="song-artist">
+                            {song.explicit_tag && ( // only render the icon if tag's true
                             <svg className="explicit-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 13 13" fill="none">
                             <g clipPath="url(#clip0_20_41)">
                                 <path d="M2.03125 0C1.49253 0 0.975873 0.214006 0.594939 0.594939C0.214006 0.975873 0 1.49253 0 2.03125L0 10.9688C0 11.5075 0.214006 12.0241 0.594939 12.4051C0.975873 12.786 1.49253 13 2.03125 13H10.9688C11.5075 13 12.0241 12.786 12.4051 12.4051C12.786 12.0241 13 11.5075 13 10.9688V2.03125C13 1.49253 12.786 0.975873 12.4051 0.594939C12.0241 0.214006 11.5075 0 10.9688 0L2.03125 0ZM5.54613 8.84H8.53125V9.75H4.46875V3.25162H8.53125V4.16163H5.54613V6.0125H8.35494V6.88431H5.54613V8.84Z" fill="#C1C0CD"/>
@@ -115,6 +116,7 @@ function Player(){
                                 </clipPath>
                             </defs>
                             </svg>
+                            )}
                             <span className="artist-name">{song.artist_name}</span>
                         </div>
                         <audio ref={audioRef} src={audioSrc}></audio>
