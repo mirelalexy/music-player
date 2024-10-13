@@ -7,7 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
 dist
 dist-ssr
 *.local
@@ -22,3 +21,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore node_modules folder (both frontend and backend)
+node_modules/
+music-api/node_modules/
+
+# Ignore .env files (in backend API)
+music-api/.env

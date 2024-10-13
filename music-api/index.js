@@ -30,6 +30,23 @@ app.get('/songs', async (req, res) => {
   }
 });
 
+// get a song by ID
+app.get('/songs/:id', async (req, res) => {
+    const { id } = req.params;  // extract song ID from the URL
+    try {
+      const result = await pool.query('SELECT * FROM songs WHERE id_song = $1', [id]); // prevent SQL injection
+      if (result.rows.length > 0) { // if there's at least 1 row returned by the query
+        res.json(result.rows[0]); // since the result is 1 song with that ID, only first row is needed
+      } else {
+        res.status(404).json({ error: 'Song not found' });
+      }
+    } catch (error) {
+      console.error('Error fetching song by ID:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
