@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './Player.css';
+import { extractColors } from "extract-colors";
 
 
 function Player(){
@@ -17,6 +18,12 @@ function Player(){
     const toggleColor = () => {
         setIconColor((prevColor) => (prevColor === "#FFF" ? "#FFD25F" : "#FFF"));
     };
+
+    // state for background color changing based on album cover
+    const [backgroundColor, setBackgroundColor] = useState("#870DB3");
+
+    // ref for album cover
+    const albumCoverRef = useRef(null);
 
     // state to change songs (first song is already loaded)
     const [song, setSong] = useState({
@@ -41,13 +48,53 @@ function Player(){
     // audio reference
     const audioRef = useRef(null);
 
+    // state for current time in song
+    const [currentTime, setCurrentTime] = useState(0);
+
+    // state for duration of song
+    const [duration, setDuration] = useState(0);
+
+    // ref for progress bar
+    const progressBarRef = useRef(null);
+
+    // function to format song duration (minutes:seconds)
+    const formatDuration = (duration) => {
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60);
+        return `${minutes}:${seconds < 10 ? `0${seconds}` : `${seconds}`}`;
+    };
+
+    // Load song duration when metadata is loaded
+    useEffect(() => {
+        const audio = audioRef.current;
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration);
+        };
+        if (audio) {
+            audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        }
+    });
+
+    // update current time
+    useEffect(() => {
+        const audio = audioRef.current;
+        const handleTimeUpdate = () => {
+          setCurrentTime(audio.currentTime);
+        };
+        if (audio) {
+          audio.addEventListener('timeupdate', handleTimeUpdate);
+        }
+    });
+
+    // update progress bar width based on current time
+    const progressPercent = (currentTime / duration) * 100;
+    
     // fetch song data from the API
     useEffect(() => {
         axios.get(`http://localhost:3001/songs/${songId}`)
           .then(response => {
             setSong(response.data);
             setAudioSrc(response.data.audio_path);
-            setIsPlaying(true);
           })
           .catch(error => console.error('Error fetching song:', error));
       }, [songId]);  // every time the song changes, fetch the data
@@ -67,17 +114,24 @@ function Player(){
         }
     };
 
-    // load next/previous song
+    // load the next/previous song
     useEffect(() => {
         const audio = audioRef.current;
+    
+        const handleCanPlay = () => {
+            if (isPlaying) {
+                audio.play();
+            }
+        };
+    
         if (audio && audioSrc) {
-            audio.pause();  // pause current song
-            audio.load();   // load the new song
-            audio.addEventListener('loadeddata', () => {
-                if (isPlaying) {
-                    audio.play();  // play the new song once it's loaded
-                }
-            });
+            audio.pause();  // pause any currently playing audio
+            audio.load();   // load new audio
+            audio.addEventListener('canplaythrough', handleCanPlay);
+    
+            return () => {
+                audio.removeEventListener('canplaythrough', handleCanPlay);
+            };
         }
     }, [audioSrc]);
 
@@ -93,15 +147,167 @@ function Player(){
         setIsPlaying(true); // plays automatically
     };
 
+    // keyboard keys to handle play/pause
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.code === "Space") {
+                event.preventDefault(); // prevent default behavior (scrolling down the page)
+                togglePlayPause();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown); // clean up listener on unmount
+        };
+    }, [isPlaying]);
+
+    // function to skip through song
+    const updateProgressBar = (event) => {
+        const audio = audioRef.current;
+        const progressBar = progressBarRef.current;
+        const rect = progressBar.getBoundingClientRect();  // get position based on viewport
+        const clickX = event.clientX - rect.left;  // get the new position relative to the progress bar
+        const progressBarWidth = rect.width;  // get the width of the progress bar
+        const newTime = (clickX / progressBarWidth) * duration;  // calculate new time based on click
+    
+        audio.currentTime = newTime;
+        setCurrentTime(newTime);
+
+        if (!isPlaying) {
+            audio.pause();  // re-pause the song to avoid it playing after skipping through
+        }
+    };
+
+    // filter colors for dynamic background color
+    const colorOptions = {
+        pixels: 64000,
+        distance: 0.22,
+        saturationDistance: 0.2,
+        lightnessDistance: 0.2,
+        hueDistance: 0.083333333,
+      
+        // exclude too bright/dark colors
+        colorValidator: (red, green, blue, alpha = 255) => {
+          if (alpha < 250) return false; // exclude transparent colors
+      
+          // convert RGB to HSL to filter based on lightness
+          const r = red / 255;
+          const g = green / 255;
+          const b = blue / 255;
+      
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const lightness = (max + min) / 2;
+      
+          return lightness > 0.3 && lightness < 0.5;
+        }
+      };
+
+    // change background color dynamically
+    useEffect(() => {
+        const albumCover = albumCoverRef.current;
+        if (song && albumCover) {
+            extractColors(albumCover.src, colorOptions)
+            .then((colors) => {
+                if (colors.length > 0) {
+                    const selectedColor = colors[0]; // choose the first color that passes the filter
+                    setBackgroundColor(selectedColor.hex);
+                }
+            });
+        }
+    }, [song]); // every time the song changes
+
+    // state for lyrics
+    const [lyrics, setLyrics] = useState([]);
+
+    // manage lrc files
+    const parseLRC = (lrcContent) => {
+        const lines = lrcContent.split("\n");
+        const lyricsArray = [];
+    
+        //[mm:ss.ttt] lyric
+        const regex = /^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)$/;
+
+    
+        lines.forEach(line => {
+            const match = regex.exec(line);
+            if (match) {
+                const minutes = parseInt(match[1], 10);
+                const seconds = parseInt(match[2], 10);
+                const milliseconds = parseInt(match[3], 10);
+                const timeInSeconds = minutes * 60 + seconds + milliseconds / 1000;
+                const text = match[4].trim();
+    
+                lyricsArray.push({ time: timeInSeconds, text });
+            }
+        });
+    
+        return lyricsArray;
+    };
+
+    // change lyrics
+    useEffect(() => {
+        // fetch the LRC file for the current song
+        const fetchLyrics = async () => {
+            try {
+                const response = await fetch(song.lyrics_path);
+                console.log(response);
+                const lrcText = await response.text();
+                console.log(lrcText);
+                const parsedLyrics = parseLRC(lrcText);
+                setLyrics(parsedLyrics);
+                console.log(parsedLyrics);
+            } catch (error) {
+                console.error('Error fetching lyrics:', error);
+            }
+        };
+    
+        if (song) {
+            fetchLyrics();
+        }
+    }, [song]); // whenever the song changes
+
+    // get the current lyric based on currentTime
+    const currentLyric = lyrics.find((line, index) => {
+        const nextLineTime = lyrics[index + 1] ? lyrics[index + 1].time : Infinity;
+        return currentTime >= line.time && currentTime < nextLineTime;
+    });
+
+    // auto scroll
+    useEffect(() => {
+        const highlightedLyric = document.querySelector('.highlighted');
+        if (highlightedLyric) {
+            highlightedLyric.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, [currentLyric]); // whenever the current lyric changes
+
+    // ref for lyrics container
+    const lyricsContainerRef = useRef(null); 
+
+    // scroll to top when song changes
+    useEffect(() => {
+        if (lyricsContainerRef.current) {
+            lyricsContainerRef.current.scrollTo({
+                top: 0,
+                behavior: 'auto'  // instantly scroll to the top
+            });
+        }
+    }, [songId]); // every time the songId changes
+
     return(
         <>
-            <div className="main-container">
+            <div className="main-container" style={{ backgroundColor: backgroundColor }}>
                 <div className={`player-container ${showLyrics ? 'shifted-left' : 'centered'}`}>
                     <div className="metadata">
                         <p className="playing-from">Playing from album</p>
                         <p className="album-name">{song.album_name}</p>
                     </div>
-                    <img className="cover" src={song.cover_path} alt="album cover"></img>
+                    <img className="cover" ref={albumCoverRef} src={song.cover_path} alt="album cover"></img>
                     <div className="song-info">
                         <p className="song-title">{song.song_name}</p>
                         <div className="song-artist">
@@ -122,13 +328,13 @@ function Player(){
                         <audio ref={audioRef} src={audioSrc}></audio>
                     </div>
                     <div className="progress-bar">
-                        <div className="progress">
-                            <div className="progress-line"></div>
+                        <div className="progress" ref={progressBarRef} onClick={updateProgressBar}>
+                            <div className="progress-line" style={{ width: `${progressPercent}%` }}></div>
                             <div className="progress-circle"></div>
                         </div>
                         <div className="duration-wrapper">
-                            <span id="current-time">0:00</span>
-                            <span id="duration">2:02</span>
+                            <span id="current-time">{formatDuration(currentTime)}</span>
+                            <span id="duration">{formatDuration(duration)}</span>
                         </div>
                     </div>
                     <div className="controls">
@@ -147,15 +353,30 @@ function Player(){
                             </clipPath>
                         </defs>
                         </svg>
-                        <svg className="play-pause-icon icon" onClick={() => { togglePlayPause(); }} xmlns="http://www.w3.org/2000/svg" width="57" height="57" viewBox="0 0 57 57" fill="none">
-                        <g clipPath="url(#clip0_20_60)">
+                        <svg className="play-pause-icon icon" onClick={() => {togglePlayPause(); }} xmlns="http://www.w3.org/2000/svg" width="57" height="57" viewBox="0 0 57 57" fill="none">
+                        {isPlaying ? (
+                            <>
+                            <g clipPath="url(#clip0_108_43)">
+                              <path d="M28.5 0C12.7582 0 0 12.7582 0 28.5C0 44.2418 12.7582 57 28.5 57C44.2418 57 57 44.2418 57 28.5C57 12.7582 44.2418 0 28.5 0ZM24.9375 21.2748V35.5248C24.9375 37.5955 23.3455 39.1875 21.375 39.1875C19.4045 39.1875 17.8125 37.5955 17.8125 35.625V21.2748C17.8125 19.4045 19.4045 17.8125 21.2748 17.8125C23.1451 17.8125 24.9375 19.4045 24.9375 21.2748ZM39.1875 21.2748V35.5248C39.1875 37.5955 37.5955 39.1875 35.625 39.1875C33.6545 39.1875 32.0625 37.5955 32.0625 35.625V21.2748C32.0625 19.4045 33.6545 17.8125 35.5248 17.8125C37.3951 17.8125 39.1875 19.4045 39.1875 21.2748Z" fill="white"/>
+                            </g>
+                            <defs>
+                              <clipPath id="clip0_108_43">
+                                <rect width="57" height="57" fill="white"/>
+                              </clipPath>
+                            </defs>
+                            </>
+                        ) : (
+                            <>
+                            <g clipPath="url(#clip0_20_60)">
                             <path d="M28.5 0C12.7582 0 0 12.7582 0 28.5C0 44.2418 12.7582 57 28.5 57C44.2418 57 57 44.2418 57 28.5C57 12.7582 44.2418 0 28.5 0ZM41.4697 30.7822L25.4385 40.5791C25.0154 40.8352 24.5256 40.9688 24.0469 40.9688C22.5228 40.9688 21.375 39.7219 21.375 38.2969V18.7031C21.375 17.2893 22.5105 16.0312 24.0469 16.0312C24.5305 16.0312 25.013 16.1622 25.4396 16.4227L41.4708 26.2196C42.2602 26.7076 42.75 27.5648 42.75 28.5C42.75 29.4352 42.2602 30.2924 41.4697 30.7822Z" fill="white"/>
-                        </g>
-                        <defs>
+                            </g>
+                            <defs>
                             <clipPath id="clip0_20_60">
                                 <rect width="57" height="57" fill="white"/>
                             </clipPath>
-                        </defs>
+                            </defs>
+                            </>
+                        )}
                         </svg>
                         <svg className="next-icon icon" onClick={() => { nextSong(); }}xmlns="http://www.w3.org/2000/svg" width="37" height="37" viewBox="0 0 37 37" fill="none">
                         <g clipPath="url(#clip0_20_63)">
@@ -183,15 +404,16 @@ function Player(){
                     </div>
                 </div>
                 {showLyrics && (
-                    <div className="lyrics-container">
+                    <div className="lyrics-container" ref={lyricsContainerRef} style={{ backgroundColor: backgroundColor }}>
                         <div className="lyrics">
-                            <p>Ooh, oh, yeah, yeah</p>
-                            <p>Oh, yeah</p>
-                            <p>Yeah</p>
-                            <p className="highlighted">Yeah, hit the gas, ignite it, she sniff gasoline (Gasoline)</p>
-                            <p>Throw it back in private, never on the screen, no (No, no, no)</p>
-                            <p>Love the passion, fire, high ass self-esteem, yeah</p>
-                            <p>So outlandish, she said, "Fuck me 'til I scream," whoa</p>
+                            {lyrics.map((line, index) => (
+                                <p
+                                    key={index}
+                                    className={currentLyric && currentLyric.time === line.time ? "highlighted" : ""}
+                                >
+                                {line.text}
+                            </p>
+                            ))}
                         </div>
                     </div>
                 )}
