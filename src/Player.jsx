@@ -3,7 +3,6 @@ import axios from 'axios';
 import './Player.css';
 import { extractColors } from "extract-colors";
 
-
 function Player(){
     // state to toggle lyrics
     const [showLyrics, setShowLyrics] = useState(false);
